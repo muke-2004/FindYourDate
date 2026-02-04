@@ -1,0 +1,57 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h2>My Profile</h2>
+
+    <form
+      action="/compare/<%= user._id%>"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+    
+      <% if (typeof success !== 'undefined' && success) { %>
+       <div class="alert alert-success" role="alert">
+         <%= success %>
+       </div>
+       <% } %>
+
+    
+
+        <h2><%=user.name%></h2>
+
+      <div>
+        <% if (user.profile_photo) { %>
+
+        <img src="/uploads/<%= user.profile_photo %>" alt="profile_photo" />
+        <% } %>
+
+        <h2>ai photo</h2>
+      </div>
+      <div>
+        <% if (user.ai_half_photo) { %>
+        <img
+          src="/uploads/ai_faces/<%= user.ai_half_photo %>"
+          alt="ai_half_photo"
+        />
+        <% } %>
+      </div>
+      <br>
+      <div>
+        <button>
+          compare
+        </button>
+      </div>
+    </form>
+    <form method= "post" action="/logout"><button>Logout</button></form>
+    <form method="get" action="/matchedroom"><button>My room</button></form>
+    <form method="get" action="/roombyelse"><button>Room by else</button></form>
+  </body>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</html>

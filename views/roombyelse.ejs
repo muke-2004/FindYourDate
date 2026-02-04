@@ -1,0 +1,280 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Room By Else</title>
+    <!-- <link rel="stylesheet" href="../public/style.css"> -->
+
+    <style>
+      *{
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box;
+      }
+
+      
+      .users{
+        display: flex;
+        justify-content: space-between;
+        position: fixed;
+        top: 0px;
+        width: 100%;
+        background: #128C7E;
+        z-index: 1000;
+        border: 1px solid black;
+      }
+      .userA{
+        margin:10px;
+        display:flex;
+        align-items: center;
+      }
+
+      .usernameandtyping{
+        display: flex;
+        flex-direction: column;
+      }
+
+      .userA_profile_photo img{
+        height: 60px;
+        width: 60px;
+        border-radius: 50%;
+      }
+      .userA_name{
+        padding-left: 20px;
+        font-weight: bold;
+      }
+
+      .userB{
+        margin:10px;
+        display:flex;
+        align-items: center;
+      }
+      .userB_profile_photo img{
+        height: 60px;
+        width: 60px;
+        border-radius: 50%;
+      }
+      .userB_name{
+        padding-right: 20px;
+        font-weight: bold;
+      }
+
+      .message_area{
+        /* flex: 1; */
+        padding: 12px;
+        border: 1px solid #ccc;
+        outline: none;
+        background-color: #128C7E;
+        position: fixed;
+        width: 100%;
+        bottom: 0px;
+      }
+
+      input{
+        width: 100%;
+        padding: 10px;
+      }
+
+      .sendBtn{
+        margin-left: 0;
+        padding: 10px;
+      }
+      
+      .messages {
+        /* margin-left: 8px; */
+         margin: 110px 0px;
+        padding: 10px 18px;
+        border-radius: 20px;
+        /* border: none; */
+        background: #128C7E;
+        color: white;
+        /* cursor: pointer; */
+      }
+
+      .msg {
+        color: white;
+        padding: 8px;
+        margin: 5px;
+        border-radius: 10px;
+        max-width: 35%;
+        word-break: break-word;
+      }
+
+      .mine {
+        align-self: flex-start;
+        background-color: green;
+      }
+
+      .their {
+        align-self: flex-end;
+        background: gray;
+      }
+     
+      .msg p {
+        font-size: 11px;
+        margin: 0 0 4px 0;
+        opacity: 0.8;
+      }
+      
+    </style>
+  </head>
+  <body>
+    
+
+    <% if(!userA.face_matches_by_else || userA.face_matches_by_else.length === 0){%>
+      <h1>Chat room for matched users</h1>
+
+        <p>No matches found</p>
+    <%}else {%>
+      <h1>User matched</h1>
+      <div class="users">
+        <div class="userA">
+          <div class="userA_profile_photo">
+            <img src="/uploads/<%=userA.profile_photo%>" alt="userA_profile_photo">
+          </div>
+          <div class="usernameandtyping">
+            <div class="userA_name"><%= userA.name %></div>
+            <div class="typing" id="typing"></div>
+          </div>
+        </div>
+
+        <div class="userB">
+          <% userB.forEach(match => { %>
+            <div class="userB_name">
+              <%= match.matched_user_id.name %> 
+            </div>
+            <div class="userB_profile_photo">
+              <img src="/uploads/<%= match.ai_image%>" />
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    
+
+    <div class="messages" id="messages">
+      <% if (oldMessages && oldMessages.length > 0) { %>
+        <% oldMessages.forEach(message => { %>
+
+          <% const isMe = userA._id.toString() === message.senderId?.toString(); %>
+
+          <div class="msg <%= isMe ? 'mine' : 'their' %>">
+            <p><%=message.created_At.toString().split(" ")[4]%></p>
+            <%= message.message %>
+          </div>
+
+        <% }) %>
+      <% } %>
+    </div>
+
+    
+    <div class="message_area">
+        <%- include("partials/messagebox.ejs")%>
+    </div>
+
+    <%}%>
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+
+      const socket = io();
+      socket.on("connect", () => {
+        socket.emit("joinRoom", roomId);
+      });
+
+      const sendBtn = document.getElementById("sendBtn");
+      const message_box = document.getElementById("message_box");
+      const allMessages = document.getElementById("messages");
+      allMessages.style.display = "flex";
+      allMessages.style.flexDirection = "column"
+      const currentUserName = "<%= userA.name %>"
+      const currentUserId = "<%= userA._id %>"
+      const roomId = "<%= room_Id %>";
+      
+
+      // socket.emit("joinRoom",roomId);
+      // console.log("roomId:" + roomId);
+
+      sendBtn.addEventListener("click",()=>{
+        socket.emit("messageFromUser",{
+          roomId,
+          message:message_box.value.trim(),
+          senderId:currentUserId,
+          senderName:currentUserName
+        })
+        message_box.value = "";
+        message_box.focus();
+      })
+
+      socket.on("messageFromUser",(data)=>{
+
+        const isMe = currentUserId === data.senderId;
+
+        // console.log(currentUserId);
+        // console.log(data.senderId);
+        // console.log(isMe);
+        
+        const messageDiv = document.createElement("div");
+        
+        messageDiv.style.alignSelf = isMe ? "flex-start" : "flex-end";
+        messageDiv.style.backgroundColor = isMe? "green" : "gray";
+        messageDiv.style.color = "white";
+        messageDiv.style.padding ="8px";
+        messageDiv.style.margin ="5px";
+        messageDiv.style.borderRadius = "10px";
+        messageDiv.style.maxWidth = "35%";
+        messageDiv.style.wordBreak = "break-word"; 
+        
+        messageDiv.textContent = data.message;
+        
+        allMessages.appendChild(messageDiv); 
+        allMessages.scrollTop = allMessages.scrollHeight;
+       
+      }
+    )
+
+    message_box.addEventListener("keydown",(e)=>{
+      e.preventDefault();
+      sendBtn.click();
+    })
+
+    // message_box.addEventListener("input",()=>{
+    //   socket.emit("typing",{
+    //     senderId:currentUserId,
+    //     currentUserName :currentUserName,
+    //     roomId,
+    //   })
+    // })
+
+    // socket.on("typing",(data)=>{
+    //   const isMe = currentUserId.toString() === data.senderId.toString();
+    //    const typing = document.getElementById("typing");
+
+    //   if (!isMe) {
+    //     typing.textContent = `${data.currentUserName} is typing...`;
+
+    //     // Clear after 1.5 seconds
+    //     clearTimeout(window.typingTimeout);
+        
+    //     window.typingTimeout = setTimeout(() => {
+    //       typing.textContent = "";
+    //     }, 1500);
+    //   }
+    // })
+
+      // const currentUser = "<%= userA.name %>"
+      
+      // typing indicator
+
+      // message_box.addEventListener("input",()=>{
+      //   socket.emit("typing",()=>{
+      //     userId
+      //   })
+      // })
+
+        // console.log(data);
+    </script>
+  </body>
+</html>

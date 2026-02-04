@@ -1,0 +1,35 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Profile</title>
+  </head>
+  <body>
+    <h1>CREATE PROFILE/SIGNIN</h1>
+
+    <form method="post" action="/login/signup" enctype="multipart/form-data">
+      <input type="text" placeholder="Enter your name" name="name" />
+
+      <input type="email" name="email" placeholder="enter your email" />
+
+      <input
+        type="password"
+        name="password"
+        placeholder="enter your password"
+      />
+
+      <p>upload your profile photo</p>
+
+      <input type="file" name="profile_photo" accept="image/*" required />
+
+      <p>upload your ai_half_photo</p>
+      <input type="file" name="ai_half_photo" accept="image/*" />
+
+      <!-- <p>upload your ai_full_photo photo</p>
+
+      <input type="file" name="ai_full_photo" accept="image/*" /> -->
+
+      <button>create profile/SIGNIN</button>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Main page</title>
+  </head>
+  <body>
+    <h1>LOGIN</h1>
+    <% if(locals.error){ %>
+      <div class="alert alert-danger" role="alert">
+         <%= locals.error %>
+      </div>
+    <%}%>
+    <form method="POST" action="/login">
+      <div>
+        <input type="email" placeholder="enter your email" name="email" />
+        <input
+          type="password"
+          placeholder="enter your password"
+          name="password"
+        />
+      </div>
+
+      <button type="submit">LOGIN</button>
+    </form>
+  </body>
+</html>

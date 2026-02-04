@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Face Matches</title>
+    <style>
+      .match-card {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .match-card img {
+        width: 150px;
+        height: auto;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Face Matches</h1>
+
+    <% if (!matches || matches.length === 0) { %>
+    <p>No matches found.</p>
+    <% } else { %> <% matches.forEach(match => { %>
+    <div class="match-card">
+      <% if (match.ai_image) { %>
+      <img src="/<%= match.ai_image %>" alt="Matched Face" />
+      <% } else { %>
+      <p>No image</p>
+      <% } %>
+
+      <div>
+        <p>
+          <strong>Distance:</strong>
+          <%= match.distance !== undefined ? match.distance.toFixed(3) : "N/A"
+          %>
+        </p>
+
+        <p>
+          <strong>Confidence:</strong>
+          <% if (match.confidence && !isNaN(match.confidence)) { %> <%=
+          match.confidence >= 50 ? "High Confidence" : "Low Confidence" %> (<%=
+          match.confidence.toFixed(1) %>%) <% } else { %> N/A <% } %>
+        </p>
+      </div>
+    </div>
+    <% }) %> <% } %>
+  </body>
+</html>
