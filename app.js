@@ -22,7 +22,7 @@ const io = new Server(server);
 
 // ================== MULTER ==================
 const multer = require("multer");
-const { isKeyObject } = require("util/types");
+// const { isKeyObject } = require("util/types");
 
 // ================== APP SETUP ==================
 app.set("views", path.join(__dirname, "views"));
@@ -270,7 +270,7 @@ app.post("/logout", (req, res) => {
 });
 
 // ================== COMPARISON ROUTE ==================
-app.post("/compare/:id", async (req, res) => {
+app.post("/compare/:id", restrictToLoggedinUserOnly, async (req, res) => {
   // console.log("COMPARE REQUEST FOR USER ID:", req.params.id);
   try {
     const userA = await userdb.findById(req.params.id);
@@ -348,7 +348,7 @@ app.post("/compare/:id", async (req, res) => {
         }
 
         const parsed = JSON.parse(matchArray[0]);
-        const THRESHOLD = 0.5;
+        const THRESHOLD = 0.68;
 
         userA.face_matches = [];
 
@@ -376,9 +376,7 @@ app.post("/compare/:id", async (req, res) => {
           });
 
           const alreadyExisting = matchedUser.face_matches_by_else.some(
-            (matches) => {
-              matches.matched_user_id.equals(userA._id);
-            },
+            (matches) => matches.matched_user_id.equals(userA._id),
           );
 
           if (!alreadyExisting) {

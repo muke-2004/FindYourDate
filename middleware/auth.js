@@ -2,6 +2,7 @@ require("dotenv").config();
 const userdb = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const secret = process.env.SECRET;
+const { validateTokenForUser } = require("../auth");
 
 const restrictToLoggedinUserOnly = async (req, res, next) => {
   const token = req.cookies?.uid;
@@ -11,7 +12,7 @@ const restrictToLoggedinUserOnly = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, secret);
+    const decoded = validateTokenForUser(token);
 
     // 🔥 FETCH FULL USER FROM DB
     const user = await userdb.findById(decoded._id);
