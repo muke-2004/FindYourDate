@@ -3,33 +3,104 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Profile</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
   </head>
+
   <body>
-    <h1>CREATE PROFILE/SIGNIN</h1>
+    <div
+      class="border d-flex flex-column align-items-center justify-content-center vh-100"
+    >
+      <div class="login-box card p-4 rounded shadow-sm" style="width: 400px">
+        <%-include("partials/nav")%>
 
-    <form method="post" action="/login/signup" enctype="multipart/form-data">
-      <input type="text" placeholder="Enter your name" name="name" />
+        <% if(locals.error){ %>
+            <div class="alert alert-danger" role="alert">
+              <strong>Error!</strong> <%= locals.error %>
+            </div>
+          <% } %>
 
-      <input type="email" name="email" placeholder="enter your email" />
+        <form
+          method="post"
+          action="/login/signup"
+          enctype="multipart/form-data"
+        >
+          <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="exampleInputEmail1"
+              aria-describedby="emailHelp"
+              name="name"
+              required
+            />
 
-      <input
-        type="password"
-        name="password"
-        placeholder="enter your password"
-      />
+            <label for="exampleInputEmail1" class="form-label"
+              >Email address</label
+            >
+            <input
+              type="email"
+              class="form-control"
+              id="exampleInputEmail1"
+              aria-describedby="emailHelp"
+              name="email"
+              required
+            />
 
-      <p>upload your profile photo</p>
+            <div id="emailHelp" class="form-text">
+              We'll never share your email with anyone else.
+            </div>
+          </div>
 
-      <input type="file" name="profile_photo" accept="image/*" required />
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label"
+              >Password</label
+            >
+            <input
+              type="password"
+              class="form-control"
+              id="exampleInputPassword1"
+              name="password"
+              required
+            />
+          </div>
 
-      <p>upload your ai_half_photo</p>
-      <input type="file" name="ai_half_photo" accept="image/*" />
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label"
+              >Profile Image</label
+            >
+            <input
+              type="file"
+              class="form-control"
+              id="exampleInputPassword1"
+              name="profile_photo"
+              accept="image/*"
+              required
+            />
+          </div>
 
-      <!-- <p>upload your ai_full_photo photo</p>
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label"
+              >Ai Image</label
+            >
+            <input
+              type="file"
+              class="form-control"
+              id="exampleInputPassword1"
+              name="ai_half_photo"
+              accept="image/*"
+              required
+            />
+          </div>
 
-      <input type="file" name="ai_full_photo" accept="image/*" /> -->
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
 
-      <button>create profile/SIGNIN</button>
-    </form>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      </div>
+    </div>
   </body>
 </html>

@@ -19,145 +19,13 @@ const { Server } = require("socket.io");
 const http = require("http");
 const server = http.createServer(app);
 const io = new Server(server);
+const { checkForAuthenticationCookie } = require("./middleware/authentication");
 
 // ================== MULTER ==================
 const multer = require("multer");
-// const { isKeyObject } = require("util/types");
+// const { restrictToLoggedInUserOnly } = require("../MANGOO/middleware/auth");
 
-// ================== APP SETUP ==================
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
-
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride("_method"));
-app.use(cookieParser());
-
-// ================== DB ==================
-
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB connected"))
-  .catch((e) => console.log(e));
-
-// ================== Socket io sockets means users ==================
-io.on("connection", (socket) => {
-  // console.log("A new user connected");
-
-  // whenever user disconnects
-  // socket.on("userDisconnect", (message)=>{
-  //  io.emit("message","user disconnected")
-  // });
-
-  // broadcast when a user connnects
-  // socket.emit('connect',"user connected")
-  // scoket.broadcast.emit('message','user connected')
-
-  // whenever user sends a message from frontend
-  // socket.on("userMessage", (data) => {
-  // console.log("user sent message", message);
-
-  // sever sends the same message to all the users
-  // io.emit("message", data);
-  // });
-
-  console.log("User connected:", socket.id);
-
-  socket.on("joinRoom", (roomId) => {
-    console.log(roomId);
-    socket.join(roomId);
-  });
-
-  socket.on("messageFromUser", async (data) => {
-    try {
-      let chatRoom = await chatdb.findOne({ room_Id: data.roomId });
-
-      if (!chatRoom) {
-        chatRoom = new chatdb({
-          room_Id: data.roomId,
-          messages: [{ message: data.message, senderId: data.senderId }],
-        });
-      } else {
-        chatRoom.messages.push({
-          message: data.message,
-          senderId: data.senderId,
-        });
-      }
-
-      await chatRoom.save();
-      io.to(data.roomId).emit("messageFromUser", data);
-    } catch (error) {
-      console.log("error saving message", error);
-    }
-  });
-
-  // socket.on("typing", (data) => {
-  //   socket.to(data.roomId).emit("typing", data);
-  // });
-});
-
-app.get("/matchedroom", restrictToLoggedinUserOnly, async (req, res) => {
-  // console.log(req.user);
-  const user = await userdb
-    .findById(req.user._id)
-    .populate("face_matches.matched_user_id", "name");
-
-  // console.log(JSON.stringify(user, null, 2));
-  // console.log(user.face_matches[0].matched_user_id);
-
-  const room_id = req.user.face_matches[0]?.room_Id;
-
-  const chatRoom = await chatdb.findOne({ room_Id: room_id });
-
-  return res.render("matchedroom", {
-    userA: user,
-    userB: user.face_matches,
-    room_Id: user.face_matches[0]?.room_Id,
-    oldMessages: chatRoom ? chatRoom.messages : [],
-  });
-});
-
-// app.post("/matchedroom", restrictToLoggedinUserOnly, async (req, res) => {
-//   console.log("user form the login info" + req.user);
-//   // const chat = await new chatdb({
-//   //   room_Id: ,
-//   // });
-//   return res.redirect("matchedroom");
-// });
-
-app.get("/roombyelse", restrictToLoggedinUserOnly, async (req, res) => {
-  const user = await userdb
-    .findById(req.user._id)
-    .populate("face_matches_by_else.matched_user_id", "name ai_image");
-
-  // console.log(JSON.stringify(user, null, 2));
-  const room_id = user.face_matches_by_else[0]?.room_Id;
-  const chatRoom = await chatdb.findOne({ room_Id: room_id });
-
-  // console.log(chatRoom.messages.created_At.toString());
-  // const oldMessages = await chatdb
-  //   .find({ room_Id: room_id })
-  //   .populate("sender_id", "name")
-  //   .sort({ created_at: 1 });
-  res.render("roombyelse", {
-    userA: user,
-    userB: user.face_matches_by_else,
-    room_Id: user.face_matches_by_else[0]?.room_Id,
-    oldMessages: chatRoom ? chatRoom.messages : [],
-    // created_At: created_At,
-  });
-});
-
-// ================== ROUTES ==================
-
-app.get("/", (req, res) => {
-  // res.render("signup");
-  return res.send("main page route /");
-  // console.log("mian page route /");
-});
-
-// Multer storage-> allows us to haves access how to store image data in our folder
+// Multer storage-> allows us to have access how to store image data in our folder
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const ai_folder = ["ai_half_photo"];
@@ -174,6 +42,80 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+// ================== APP SETUP ==================
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
+app.use(cookieParser());
+app.use(checkForAuthenticationCookie("uid"));
+app.use((req, res, next) => {
+  res.locals.user = req.user;
+  next();
+});
+
+// ================== DATABASE ==================
+
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("MongoDB connected"))
+  .catch((e) => console.log(e));
+
+// ================== SOCKET IO ==================
+io.on("connection", (socket) => {
+  // console.log("User connected:", socket.id);
+
+  socket.on("joinRoom", (roomId) => {
+    // console.log(roomId);
+    socket.join(roomId);
+  });
+
+  socket.on("messageFromUser", async (data) => {
+    try {
+      // console.log(data.roomId);
+
+      let chatRoom = await chatdb.findOne({ room_Id: data.roomId });
+
+      // console.log(chatRoom);
+      if (!chatRoom) {
+        chatRoom = new chatdb({
+          room_Id: data.roomId,
+          messages: [
+            {
+              message: data.message,
+              senderId: data.senderId,
+            },
+          ],
+        });
+      } else {
+        chatRoom.messages.push({
+          message: data.message,
+          senderId: data.senderId,
+        });
+      }
+
+      await chatRoom.save();
+
+      io.to(data.roomId).emit("messageFromUser", data);
+    } catch (error) {
+      console.log("error saving message", error);
+    }
+  });
+});
+
+// ================== ROUTES ==================
+
+app.get("/", (req, res) => {
+  // res.render("signup");
+  // console.log(new Date().toLocaleString("en-IN").split(",")[1]);
+  // return res.send("main page route /");
+  // console.log("mian page route /");
+  return res.redirect("login");
+});
 
 // ================== SIGNUP FOR CREATING LOGIN ==================
 
@@ -193,80 +135,79 @@ app.post(
     { name: "ai_full_photo" },
   ]),
   async (req, res) => {
-    // console.log(req.files);
-    // console.log(req.body);
+    try {
+      let user = new userdb({
+        name: req.body.name,
+        email_id: req.body.email,
+        password: req.body.password,
+        ai_half_photo: req.files.ai_half_photo
+          ? req.files.ai_half_photo[0].filename
+          : "",
+        ai_full_photo: req.files.ai_full_photo
+          ? req.files.ai_full_photo[0].filename
+          : "",
+        profile_photo: req.files.profile_photo
+          ? req.files.profile_photo[0].filename
+          : "",
+      });
 
-    // const password = req.body.password;
-    // const hashedpassword = await bcrypt.hash(password, 10);
-
-    let user = new userdb({
-      name: req.body.name,
-      email_id: req.body.email,
-      password: req.body.password,
-      ai_half_photo: req.files.ai_half_photo
-        ? req.files.ai_half_photo[0].filename
-        : "",
-      ai_full_photo: req.files.ai_full_photo
-        ? req.files.ai_full_photo[0].filename
-        : "",
-      profile_photo: req.files.profile_photo
-        ? req.files.profile_photo[0].filename
-        : "",
-    });
-
-    await user.save();
-
-    return res.redirect("/login");
+      await user.save();
+      return res.redirect("/login");
+    } catch (error) {
+      if (error.code === 11000) {
+        return res.render("signup", { error: "Email already exists" });
+      }
+      return res.render("signup", { error: "something went wrong! Try Again" });
+    }
   },
 );
 
 // ================== LOGIN ==================
+
 app.get("/login", (req, res) => {
+  if (req.user) {
+    return res.redirect("/myprofile");
+  }
   return res.render("login");
 });
 
 app.post("/login", async function (req, res) {
-  // const { userid } = req.query;
-  // if (!userid) return res.render("login");
-  // res.redirect(`/login/${userid}/myprofile`);
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await userdb.findOne({ email_id: email }).select("+password");
+    const user = await userdb.findOne({ email_id: email }).select("+password");
 
-  if (!user) {
-    // console.log("user not found");
-    return res.redirect("/login");
-  }
+    if (!user) {
+      // console.log("user not found");
+      return res.render("login", {
+        error: "User not found Try Creating new Account",
+      });
+    }
 
-  const isValidPassword = await bcrypt.compare(password, user.password);
-  // console.log(isValidPassword);
-  if (!isValidPassword) {
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.render("login", {
+        error: "incorrect email or password",
+      });
+    }
+
+    // ================== creating a session id for security instead of using id from the database as before ==================
+
+    // const sessionId = uuidv4(); only used for stateless authentication
+
+    const token = createTokenForUser(user);
+
+    res.cookie("uid", token);
+    // console.log(user);
+    // console.log(cookieCreated);
+
+    return res.redirect("/myprofile");
+  } catch (error) {
     return res.render("login", {
-      error: "incorrect email or password",
+      error: "Something went wrong! Try again later",
     });
   }
-
-  // ================== creating a session id for security instead of using id from the database as before ==================
-
-  // const sessionId = uuidv4(); only used for stateless authentication
-
-  const token = createTokenForUser(user);
-
-  res.cookie("uid", token);
-  // console.log(user);
-  // console.log(cookieCreated);
-
-  return res.redirect("/myprofile");
-});
-
-app.get("/myprofile", restrictToLoggedinUserOnly, (req, res) => {
-  return res.render("myprofile", { user: req.user });
-});
-
-// ================== LOGOUT ==================
-
-app.post("/logout", (req, res) => {
-  res.clearCookie("uid").redirect("/login");
 });
 
 // ================== COMPARISON ROUTE ==================
@@ -306,12 +247,7 @@ app.post("/compare/:id", restrictToLoggedinUserOnly, async (req, res) => {
       fs.copyFileSync(img, dest);
     });
 
-    //Use double backslashes so JavaScript reads the path correctly
-    // const pythonPath = "C:\\Users\\mukes\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
-    // const pythonPath = "C:\\Users\\mukes\\AppData\\Local\\Programs\\Python\\Python311\\python.exe";
-    const pythonPath = "C:\\Python310\\python.exe";
-    // Or use forward slashes (Windows understands these too and they are easier to read)
-    // const pythonPath = "C:/Users/mukes/AppData/Local/Programs/Python/Python312/python.exe";
+    const pythonPath = process.env.PYTHON_PATH;
 
     const python = spawn(pythonPath, [
       path.join(__dirname, "compare.py"),
@@ -398,10 +334,6 @@ app.post("/compare/:id", restrictToLoggedinUserOnly, async (req, res) => {
           user: userA,
           success: "Matches found successfully!",
         });
-        // return res.redirect("/matchedroom");
-        // return res.json.status(200).json({
-        //   success:true,
-        // });
       } catch (e) {
         return res.status(500).json({ error: "Parsing error: " + e.message });
       }
@@ -411,14 +343,128 @@ app.post("/compare/:id", restrictToLoggedinUserOnly, async (req, res) => {
   }
 });
 
-// ================== Get Route For MatchedRooms ==================
-// app.get("/compare/matchedroom", restrictToLoggedinUserOnly, (req, res) => {
-//   console.log(req.user);
-//   res.redirect("matchedroom");
+// ================== chats ==================
+// app.get("/chats", restrictToLoggedinUserOnly, async (req, res) => {
+//   // console.log(req.user);
+//   const user = await userdb
+//     .findById(req.user._id)
+//     .populate("face_matches.matched_user_id", "name");
+
+//   // console.log(JSON.stringify(user, null, 2));
+//   // console.log(user.face_matches[0].matched_user_id);
+
+//   const room_id = req.user.face_matches[0]?.room_Id;
+
+//   return res.render("chats", {
+//     userA: user,
+//     userB: user.face_matches,
+//     room_Id: user.face_matches[0]?.room_Id,
+//     // oldMessages: chatRoom ? chatRoom.messages : [],
+//   });
 // });
+
+// ================== MYROOM ==================
+
+app.get("/myroom", restrictToLoggedinUserOnly, async (req, res) => {
+  try {
+    const user = await userdb
+      .findById(req.user._id)
+      .populate("face_matches.matched_user_id", "name profile_photo");
+
+    return res.render("myroom", { user: user });
+  } catch (error) {
+    res.clearCookie("uid");
+    res.render("login", { error: "Try login again!" });
+  }
+});
+
+app.get("/myroomchat/:id", restrictToLoggedinUserOnly, async (req, res) => {
+  try {
+    // const userA = await userdb.find({ "face_matches.room_Id": req.params.id });
+    const userA = req.user;
+
+    const userB = await userdb.find({
+      "face_matches_by_else.room_Id": req.params.id,
+    });
+
+    // console.log(userA.profile_photo);
+    // console.log(userB[0].profile_photo);
+
+    const chatRoom = await chatdb.findOne({ room_Id: req.params.id });
+
+    return res.render("myroomchats", {
+      userA: userA,
+      userB: userB,
+      room_Id: req.params.id,
+      oldMessages: chatRoom ? chatRoom.messages : [],
+    });
+  } catch (error) {
+    res.clearCookie("uid");
+    return res.render("login", { error: "Try login again" });
+  }
+});
+
+// ================== ROOMBYELSE ==================
+
+app.get("/roombyelse", restrictToLoggedinUserOnly, async (req, res) => {
+  try {
+    const user = await userdb
+      .findById({ _id: req.user._id })
+      .populate("face_matches_by_else.matched_user_id", "name profile_photo");
+    // console.log(chat.face_matches_by_else[0].matched_user_id);
+
+    return res.render("roombyelse", { user: user });
+  } catch (error) {
+    res.clearCookie("uid");
+    return res.render("login", { error: "Try login again!" });
+  }
+});
+
+app.get("/roombyelsechat/:id", restrictToLoggedinUserOnly, async (req, res) => {
+  try {
+    // const userA = await userdb.find({
+    //   "face_matches_by_else.room_Id": req.params.id,
+    // });
+    const userA = req.user;
+    // const userB = userdb.find({});
+    // console.log(userA);
+
+    const userB = await userdb.find({
+      "face_matches.room_Id": req.params.id,
+    });
+    // console.log(userB);
+    // const room_id = user.face_matches_by_else[0]?.room_Id;
+    const chatRoom = await chatdb.findOne({ room_Id: req.params.id });
+
+    res.render("roombyelsechats", {
+      userA: userA,
+      userB: userB,
+      room_Id: req.params.id,
+      oldMessages: chatRoom ? chatRoom.messages : [],
+    });
+  } catch (error) {
+    res.clearCookie("uid");
+    return res.render("login", { error: "Try login again!" });
+  }
+});
+
+// ================== PROFILE ==================
+
+app.get("/myprofile", restrictToLoggedinUserOnly, (req, res) => {
+  return res.render("myprofile", { user: req.user });
+});
+
+// ================== LOGOUT ==================
+
+app.get("/logout", (req, res) => {
+  res.clearCookie("uid");
+  return res.redirect("/login");
+});
 
 // ================= SERVER ==================
 const port = process.env.PORT || 8000;
 server.listen(port, () => {
   console.log("Server running on http://localhost:8000");
 });
+console.log("Python", process.env.PYTHON_PATH);
+console.log("Loaded Python Path:", process.env.PYTHON_PATH);

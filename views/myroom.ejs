@@ -3,33 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Room By Else Chats</title>
+    <title>My Room</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="https://unpkg.com/@knadh/oat/oat.min.css">
-
+    
   </head>
-
   <body>
-    <%-include("partials/nav")%>
 
-    <div class="d-flex flex-column gap-3 rounded mx-3">
-      <%if(user.face_matches_by_else.length === 0){%>
-        <div class="alert alert-warning" role="alert">
-          Alert! - No users were found with a generated AI image looks like you 
-        </div>
-      <%}%>
+    <%- include("partials/nav") %>
 
+    <div class="d-flex flex-column gap-3  mx-3 my-2">
+        <%if(user.face_matches.length === 0){%>
+          <div class="alert alert-warning" role="alert">
+            Alert! - No users were found with a face similar to the generated AI image
+          </div>
+        <%}%>
 
-        <%user.face_matches_by_else.forEach((chat)=>{%>
+        <%user.face_matches.forEach((chat)=>{%>
 
-           <a href="/roombyelsechat/<%=chat.room_Id%>" class="text-decoration-none text-dark">
+           <a href="/myroomchat/<%=chat.room_Id%>" class="text-decoration-none text-dark">
 
             <div class="border rounded">
 
-                <%if(chat.matched_user_id != null ){%>
+              <%if(chat.matched_user_id != null ){%>
                
                 <img class="rounded-circle p-2 " style="width: 90px; height:90px;"  src="/uploads/<%=chat.matched_user_id.profile_photo%>" 
                     alt="userA_profile_photo"
@@ -39,13 +38,12 @@
                 </strong>
   
               <%}%>
-
             </div>
            </a>
         <%})%>
     </div>
-    
-    <script src="https://unpkg.com/@knadh/oat/oat.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+     <script src="https://unpkg.com/@knadh/oat/oat.min.js" defer></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
