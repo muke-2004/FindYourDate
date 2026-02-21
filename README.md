@@ -217,4 +217,4 @@ This project demonstrates integration of:
 - Secure authentication
 - Cross-language system (Node.js + Python)
 
-Anyone interested can contribute and scale this into a production-grade AI social matching platform.
+This is a potential industry level application. Anyone interested can contribute and scale this into a production-grade AI social matching platform.
